@@ -29,7 +29,7 @@ async def is_available(request):
         data = json_p.loads(data)
         time_table = IMPROVE_TIME_TABLE.get(data['service'].title(), TIME_TABLE)
 
-        if data['date'].title == 'Tomorrow':
+        if data['date'].title() == 'Tomorrow':
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
             data['date'] = tomorrow.strftime("%A")
 
