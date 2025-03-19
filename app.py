@@ -18,7 +18,7 @@ async def add_cors_headers(request, response):
 
 @app.route("/")
 async def hello_world(request):
-    return json({"date": datetime.now().strftime("%A, %d/%m/%Y")})
+    return json({"date": datetime.datetime.now().strftime("%A, %d/%m/%Y")})
 
 
 @app.route("/is_therapist_available", methods=['POST'])
