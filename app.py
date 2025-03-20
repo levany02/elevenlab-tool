@@ -33,47 +33,158 @@ async def is_available(request):
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
             data['date'] = tomorrow.strftime("%A")
 
+        print(data['date'])
+
         if data['name'] == "" and data['date'] == "":
+            print("0")
             data['name'] = list(time_table.keys())[0]
 
         
-        if data['name'] != "" and data['name'] not in list(time_table.keys()):
-
+        if data['name'] != "" and (data['name'] not in list(time_table.keys())) and data['date'] not in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            print("1")
             _tmp_valid = ", ".join(list(time_table.keys()))
             return json({
-                "check": f"{data['name']} is not available. Here is some available therapist: {_tmp_valid}"
+                "check": f"{data['name']} is not available. Here is some available therapist: {_tmp_valid}. Please provide a specific day:"
             })
+
+        if data['name'] != "" and (data['name'] not in list(time_table.keys())) and data['date'] in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            print("2")
+            _tmp_valid = []
+            for _name, _value in time_table.keys():
+                print("Value: ", _name, "Date: ", data['date'], "value: ", _value[data['date']])
+                if _value[data['date']] != "Off":
+                    _tmp_valid.append(_name)
+            if len(_tmp_valid) > 0:
+                _tmp_valid = ", ".join(_tmp_valid)
+                return json({
+                    "check": f"Here is some available therapist on : {_tmp_valid}"
+                })
+            else:
+                return json({
+                    "check": f"There is no available therapist on that day."
+                })
 
 
         if data['name'] == "" and data['date'] in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            print("3")
             for _name, _value in time_table.items():
                 if time_table[_name][data['date']] != "Off":
                     return json({
-                        "check": _name + " is available from: " + _value[data['date']]
+                        "check": _name + " is available from: " + _value[data['date']] + " on " + data['date']
                     })
                     break
                 
 
         elif data['name'] != "" and data['date'] not in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            print("4")
             for _date, _time in time_table[data['name']].items():
                 if time_table[data['name']][_date] != "Off":
                     return json({
-                        "check": data['name'] + " is available from: " + time_table[data['name']][_date]
+                        "check": data['name'] + " is available from: " + time_table[data['name']][_date] + " on " + _date
                     })
                     break
 
         elif time_table[data['name']][data['date']] != "Off":
+            print("5")
             return json({
-                "check": data['name']+ " is available from: " + time_table[data['name']][data['date']]
+                "check": data['name']+ " is available from: " + time_table[data['name']][data['date']] + " on " + data['date']
+            })
+        else:
+            print("6")
+            other_date = [f"{data['name']} is available on {_date} from {_time}" for _date, _time in time_table[data['name']].items() if _time != "Off"]
+            other_date = ", or ".join(other_date)
+            print(other_date)
+            other_tech = [f"{_name} is available on {data['date']} from {time_table[_name][data['date']]}" for _name, _ in time_table.items() if time_table[_name][data['date']] != "Off"]
+            other_tech = ", or ".join(other_tech)
+            return json({
+                "check": f"""
+                 {data['name']} is off on {data['date']} but {other_date} ,
+                 Would you like to change to that day.
+                 Or we have {other_tech}
+                """
+            })
+    except Exception as err:
+        print("Error: ", err)
+        return json({"check": IMPROVE_TIME_TABLE})
+
+
+@app.route("/is_therapist_available_v2", methods=['POST'])
+async def is_available_v2(request):
+    data = request.body
+    print(data)
+    try:
+        data = json_p.loads(data)
+        time_table = IMPROVE_TIME_TABLE.get(data['service'].title(), TIME_TABLE)
+
+        if data['date'].title() == 'Tomorrow':
+            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            data['date'] = tomorrow.strftime("%A")
+
+        print(data['date'])
+
+        if data['name'] == "" and data['date'] == "":
+            data['name'] = list(time_table.keys())[0]
+
+        
+        if data['name'] != "" and (data['name'] not in list(time_table.keys())) and data['date'] not in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            print("1")
+            _tmp_valid = ", ".join(list(time_table.keys()))
+            return json({
+                "check": f"Here is some available therapist: {_tmp_valid}. Please provide a specific day:"
+            })
+
+        if data['name'] != "" and (data['name'] not in list(time_table.keys())) and data['date'] in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            print("2")
+            _tmp_valid = []
+
+            for _name, _value in time_table.items():
+                print("Value: ", _name, "Date: ", data['date'], "value: ", _value[data['date']])
+                if _value[data['date']] != "Off":
+                    _tmp_valid.append(_name)
+            if len(_tmp_valid) > 0:
+                _tmp_valid = ", ".join(_tmp_valid)
+                return json({
+                    "check": f"Here is some available therapist on : {_tmp_valid}"
+                })
+            else:
+                return json({
+                    "check": f"There is no available therapist on that day."
+                })
+
+        if data['name'] == "" and data['date'] in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            _tmp = []
+            for _name, _value in time_table.items():
+                if time_table[_name][data['date']] != "Off":
+                    _tmp.append(_name + " is available from: " + _value[data['date']] + " on " + data['date'])
+            return json({
+                "check": ", or ".join(_tmp)
+            })
+                
+
+        elif data['name'] != "" and data['date'] not in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            _tmp = []
+            for _date, _time in time_table[data['name']].items():
+                if time_table[data['name']][_date] != "Off":
+                    _tmp.append(data['name'] + " is available from: " + time_table[data['name']][_date] + " on " + _date)
+            return json({
+                "check": ", or ".join(_tmp)
+            })
+
+        elif time_table[data['name']][data['date']] != "Off":
+            return json({
+                "check": data['name']+ " is available from: " + time_table[data['name']][data['date']] + " on " + data['date']
             })
         else:
             other_date = [f"{data['name']} is available on {_date} from {_time}" for _date, _time in time_table[data['name']].items() if _time != "Off"]
+            other_date = ", or ".join(other_date)
+            print(other_date)
             other_tech = [f"{_name} is available on {data['date']} from {time_table[_name][data['date']]}" for _name, _ in time_table.items() if time_table[_name][data['date']] != "Off"]
+            other_tech = ", or ".join(other_tech)
             return json({
                 "check": f"""
-                 {data['name']} is off on {data['date']} but {other_date[0]} ,
+                 {data['name']} is off on {data['date']} but {other_date} ,
                  Would you like to change to that day.
-                 Or we have {other_tech[0]}
+                 Or we have {other_tech}
                 """
             })
     except Exception as err:
@@ -86,6 +197,11 @@ async def upsale_service(request):
     data = request.body
     try:
         data = json_p.loads(data)
+        print("****** Upsale Service *******\n")
+        print("\n".join(UPSALE_SERVICE[data['service']]))
+
+        print("****** End Upsale Service ******* \n")
+
         return json({
             "upsale_service_infor": "\n".join(UPSALE_SERVICE[data['service']])
         })
