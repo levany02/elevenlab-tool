@@ -7,6 +7,9 @@ import datetime
 
 from data_retrieval import TIME_TABLE, UPSALE_SERVICE, IMPROVE_TIME_TABLE
 
+from openai import OpenAI
+client = OpenAI(api_key="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")
+
 app = Sanic("HelloWorldApp")
 Extend(app)
 
@@ -198,16 +201,42 @@ async def upsale_service(request):
     try:
         data = json_p.loads(data)
         print("****** Upsale Service *******\n")
-        print("\n".join(UPSALE_SERVICE[data['service']]))
+        print("\n".join(UPSALE_SERVICE[data['service'].title()]))
 
         print("****** End Upsale Service ******* \n")
 
         return json({
-            "upsale_service_infor": "\n".join(UPSALE_SERVICE[data['service']])
+            "upsale_service_infor": "\n".join(UPSALE_SERVICE[data['service'].title()])
         })
     except Exception as err:
         print("Error: ", err)
         return json({"upsale_service_infor": "There are no information detail for this service."})
+
+
+@app.route("/nearest_location", methods=['POST'])
+async def find_nearest_location(request):
+    data = request.body
+    try:
+        data = json_p.loads(data)
+        prompt = f"Find 1 Massage Envy location near {data['location']}. Only get location's name and address."
+        completion = client.chat.completions.create(
+            model="gpt-4o-search-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+        )
+        print("Location: ", completion.choices[0].message.content)
+
+        return json({
+            "nearest_location": completion.choices[0].message.content
+        })
+    except Exception as err:
+        print("Error: ", err)
+        return json({"nearest_location": "There are no nearest franchised."})
+
 
 
 
