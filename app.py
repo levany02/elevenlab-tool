@@ -8,7 +8,7 @@ import datetime
 from data_retrieval import TIME_TABLE, UPSALE_SERVICE, IMPROVE_TIME_TABLE
 
 from openai import OpenAI
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="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")
 
 app = Sanic("HelloWorldApp")
 Extend(app)
